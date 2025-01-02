@@ -1,6 +1,8 @@
+import numpy as np
+
 COLUMNS=7
 ROWS=6
-EMPTY_VALUE='_'
+EMPTY_VALUE=0
 DIRECTIONS = [(1, 0),  # vertical
               (0, 1),  # horizontal
               (1, 1),  # diagonal down-right
@@ -10,7 +12,7 @@ DIRECTIONS = [(1, 0),  # vertical
 
 class Board:
     def __init__(self):
-        self.board = [[EMPTY_VALUE for _ in range(COLUMNS)] for _ in range(ROWS)]
+        self.board = np.zeros((6, 7), dtype=int)
 
     def __str__(self):
         return '\n'.join([' '.join([str(cell) for cell in row]) for row in reversed(self.board)])
@@ -61,11 +63,15 @@ class Board:
                 return True
         
         return False
+    
+    def get_board_state(self):
+        return self.board.flatten()
 
     def _get_row(self, column):
         for row in range(ROWS):
             if self.board[row][column] == EMPTY_VALUE:
                 return row
         return None
+    
 
 
