@@ -9,10 +9,10 @@ while True:
     break
   try:
     column = int(move)
-    if not 1 <= int(column) <= 7:
-      print("Invalid move. Please enter a column number between 1 and 7.")
+    if not 0 <= int(column) <= 6:
+      print("Invalid move. Please enter a column number between 0 and 6.")
       continue
-    game.make_move(column - 1)
+    game.make_move(column)
     game.print_board()
     if game.get_winner() is not None:
       if game.get_winner() == 'Tie':
@@ -21,4 +21,4 @@ while True:
         print(f"Player {game.get_winner()} wins!")
       break
   except ValueError:
-    print("Invalid input. Please enter a column number between 1 and 7.")
+    print("Invalid input. Please enter a column number between 0 and 6.")

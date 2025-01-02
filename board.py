@@ -1,6 +1,6 @@
 COLUMNS=7
 ROWS=6
-EMPTY_VALUE='-'
+EMPTY_VALUE='_'
 DIRECTIONS = [(1, 0),  # vertical
               (0, 1),  # horizontal
               (1, 1),  # diagonal down-right
@@ -25,20 +25,14 @@ class Board:
 
         return row, column
 
-    def get_valid_moves(self):
-        return [column for column in range(COLUMNS) if self.board[0][column] == EMPTY_VALUE]
 
-    def get_last_move(self):
-        return self.last_move
-        
+    def get_valid_moves(self):
+        return [column for column in range(COLUMNS) if self.board[ROWS-1][column] == EMPTY_VALUE]
+
+
     def is_full(self):
         return all([cell != EMPTY_VALUE for row in self.board for cell in row])
 
-    def _get_row(self, column):
-        for row in range(ROWS):
-            if self.board[row][column] == EMPTY_VALUE:
-                return row
-        return None
 
     def check_win(self, player, played_row, played_column):
         
@@ -67,5 +61,11 @@ class Board:
                 return True
         
         return False
+
+    def _get_row(self, column):
+        for row in range(ROWS):
+            if self.board[row][column] == EMPTY_VALUE:
+                return row
+        return None
 
 
