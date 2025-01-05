@@ -1,4 +1,4 @@
-from board import Board
+from game_engine.board import Board
 
 PLAYER_ONE = 1
 PLAYER_TWO = 2
