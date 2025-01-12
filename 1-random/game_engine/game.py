@@ -9,8 +9,7 @@ class Game:
         self.player_turn = PLAYER_ONE
         self.board = Board()
         self.winner = None
-        self.states = []
-        self.moves = []
+        self.game_info = []
 
     def get_turn(self):
         return self.player_turn
@@ -19,8 +18,7 @@ class Game:
         row = self.board.make_move(self.player_turn, column)
         is_valid_move = row is not None
         if is_valid_move:
-            self.states.append(self.board.get_board_state())
-            self.moves.append(column)
+            self.game_info.append([self.board.get_board_state(), column, 0])
             self._check_game_status(row, column)
             self._switch_turn()
 
@@ -35,8 +33,8 @@ class Game:
     def get_valid_moves(self):
         return self.board.get_valid_moves()
 
-    def get_game_states_and_moves(self):
-        return self.states, self.moves
+    def get_game_info(self):
+        return self.game_info
 
     def _switch_turn(self):
         self.player_turn = PLAYER_ONE if self.player_turn == PLAYER_TWO else PLAYER_TWO
