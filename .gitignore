@@ -1,3 +1,5 @@
 /venv
 connect4.parquet
 __pycache__/
+.DS_Store
+g
