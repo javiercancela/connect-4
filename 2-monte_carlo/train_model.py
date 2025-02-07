@@ -35,25 +35,36 @@ def play_episode(agent1, agent2, game):
     return winner
 
 
-def train_agents(num_episodes=1000):
+def train_agents(num_episodes=10000):
     """
     Train two Monte Carlo agents by playing them against each other.
     Agents learn from experience through repeated game episodes.
     """
     agent1 = MonteCarloAgent(player_id=1)
     agent2 = MonteCarloAgent(player_id=2)
+    result = 0
 
     # Play multiple episodes and learn from each
     for episode in range(num_episodes):
         game = Game()
         winner = play_episode(agent1, agent2, game)
+        if winner == 1:
+            result += 1
+        elif winner == 2:
+            result -= 1
 
         # Progress monitoring
         if episode % 100 == 0:
             print(f"Episode {episode}, Winner: {winner}")
 
-    return agent1, agent2
+    return agent1, agent2, result
 
 
 if __name__ == "__main__":
-    train_agents()
+    agent1, agent2, result = train_agents()
+    print(f"Result: {result}")
+    if result >= 0:
+        agent1.save_value_function()    
+    else:
+        agent2.save_value_function()
+

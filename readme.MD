@@ -22,7 +22,13 @@ git clone https://github.com/yourusername/connect-4.git
 cd connect-4
 ```
 
-3. Run the game:
+3. Install dependencies:
+
+```bash
+pip install -e .
+```
+
+4. Run the game:
 
 ```bash
 python connect4.py
