@@ -51,12 +51,16 @@ class MonteCarloAgent:
         return self.value_function[next_state]
 
     def update_value_function(self, reward):
+        """
+        We iterate all the states starting from the last one, altough in 
+        this case there is no need for that because the reward is the same for 
+        all states in the episode.
+        """
 
-        # Update each state's value based on the final reward
         for state in reversed(self.state_history):
-            # Store the return for this state
             self.returns[state].append(reward)
-            # Update state value to be average of all returns
+            # The value of a state is the average of all the rewards 
+            # obtained in the different games that passed through that state
             self.value_function[state] = np.mean(self.returns[state])
 
         # Clear episode history for next game

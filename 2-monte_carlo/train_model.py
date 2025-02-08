@@ -2,7 +2,7 @@ from game_engine.game import Game
 from model.monte_carlo_agent import MonteCarloAgent
 
 
-def play_episode(agent1, agent2, game):
+def play_episode(agent1: MonteCarloAgent, agent2: MonteCarloAgent, game: Game):
     """
     Simulate one complete game episode between two agents.
     Used for training agents through experience.
