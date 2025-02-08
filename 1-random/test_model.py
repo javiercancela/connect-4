@@ -17,5 +17,5 @@ for i in range(TOTAL_GAMES):
         elapsed = time.time() - start_time
         print(f"Completed {i + 1} games in {elapsed:.2f} seconds")
 
-print(f"Model dqn01 won {model_player1_won} out of {TOTAL_GAMES} games.")
-print(f"Model random won {model_player2_won} out of {TOTAL_GAMES} games.")
+print(f"Model random1 won {model_player1_won} out of {TOTAL_GAMES} games.")
+print(f"Model random2 won {model_player2_won} out of {TOTAL_GAMES} games.")
