@@ -19,6 +19,12 @@
       "console": "integratedTerminal"
     },
     {
+      "name": "Debug Play Monte Carlo.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/2-monte_carlo/play_game.py",
+      "console": "integratedTerminal"
+    },    {
       "name": "Python Debugger: Current File",
       "type": "debugpy",
       "request": "launch",
