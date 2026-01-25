@@ -8,6 +8,14 @@ A pure Python game engine for Connect-4, designed for Reinforcement Learning exp
 pip install numpy
 ```
 
+## Play
+
+```bash
+python play.py
+```
+
+Select an opponent and play as Player 1 or 2. Press 1-7 to choose a column.
+
 ## Usage
 
 ```python
