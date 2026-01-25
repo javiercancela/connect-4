@@ -1,0 +1,7 @@
+ROWS = 6
+COLS = 7
+WIN_LENGTH = 4
+
+PLAYER_1 = 1
+PLAYER_2 = -1
+EMPTY = 0

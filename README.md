@@ -22,26 +22,3 @@ git clone https://github.com/yourusername/connect-4.git
 cd connect-4
 ```
 
-3. Install dependencies:
-
-```bash
-pip install -e .
-```
-
-4. Run the game:
-
-```bash
-python connect4.py
-```
-
-## Usage
-
-TODO
-
-## Contributing
-
-Contributions are welcome! Please fork the repository and submit a pull request with your changes.
-
-## License
-
-This project is licensed under the MIT License.
