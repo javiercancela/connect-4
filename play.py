@@ -1,10 +1,11 @@
 import sys
 from connect4 import Connect4, PLAYER_1, PLAYER_2
-from agents import RandomAgent
+from agents import RandomAgent, HeuristicAgent
 
 
 AGENTS = {
     "1": ("Random", RandomAgent),
+    "2": ("Heuristic", HeuristicAgent),
 }
 
 
