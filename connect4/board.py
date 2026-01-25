@@ -47,5 +47,7 @@ class Board:
             line = " ".join(symbols[self._grid[row, col]] for col in range(COLS))
             lines.append(line)
         lines.append("-" * (COLS * 2 - 1))
-        lines.append(" ".join(str(i) for i in range(COLS)))
+        lines.append(" ".join(str(i + 1) for i in range(COLS)))
+        lines.append("")
+        lines.append("X = Player 1  O = Player 2")
         return "\n".join(lines)
