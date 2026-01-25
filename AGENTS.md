@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Connect-4 game engine for Reinforcement Learning. Pure game logic only - no graphics, no AI move selection.
+Connect-4 game engine for Reinforcement Learning.
 
 ## Architecture
 
@@ -14,9 +14,14 @@ connect4/
 ├── win_checker.py   # WinChecker class - static win detection
 └── game.py          # Connect4 class - game orchestration
 
+agents/
+├── __init__.py      # Exports: RandomAgent
+└── random_agent.py  # Random move selection
+
 tests/
 ├── test_game.py
-└── test_win_checker.py
+├── test_win_checker.py
+└── test_random_agent.py
 ```
 
 ## Key Classes
@@ -57,6 +62,23 @@ Static win detection. Checks horizontal, vertical, and both diagonals.
 WinChecker.check_win(board, row, col)  # bool - checks from last move position
 ```
 
+### RandomAgent (agents/random_agent.py)
+Baseline agent that selects a random valid move.
+
+```python
+from agents import RandomAgent
+
+agent = RandomAgent()
+move = agent.select_move(game)  # Returns random valid column
+```
+
+## Agent Interface
+
+All agents implement:
+```python
+def select_move(self, game: Connect4) -> int
+```
+
 ## Design Decisions
 
 - Players are 1 and -1 (not 1 and 2) for easier neural network output
@@ -80,7 +102,7 @@ pytest tests/ -v
 
 ## Future Extensions
 
-This engine is designed for RL training. Expected additions:
-- RL agents (random, Monte Carlo, DQN, etc.)
+Expected additions:
+- More agents (Monte Carlo, DQN, etc.)
 - Training scripts
 - Model evaluation utilities

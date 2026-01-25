@@ -33,6 +33,20 @@ flat = game.get_state_flat()  # 42-element array
 print(game)
 ```
 
+## Agents
+
+```python
+from connect4 import Connect4
+from agents import RandomAgent
+
+game = Connect4()
+agent = RandomAgent()
+
+while not game.is_game_over:
+    move = agent.select_move(game)
+    game.play(move)
+```
+
 ## Testing
 
 ```bash
@@ -43,9 +57,12 @@ pytest tests/ -v
 ## Project Structure
 
 ```
-connect4/
-├── constants.py     # Game constants
-├── board.py         # Board state management
-├── win_checker.py   # Win detection
-└── game.py          # Game orchestration
+connect4/               # Game engine
+├── constants.py
+├── board.py
+├── win_checker.py
+└── game.py
+
+agents/                 # Move selection algorithms
+└── random_agent.py
 ```
