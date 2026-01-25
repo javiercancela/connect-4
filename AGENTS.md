@@ -24,6 +24,7 @@ tests/
 └── test_random_agent.py
 
 play.py                  # Interactive console game
+benchmark.py             # Model comparison tool
 ```
 
 ## Key Classes
@@ -84,7 +85,7 @@ def select_move(self, game: Connect4) -> int
 To add a new agent:
 1. Create `agents/your_agent.py` with a class implementing `select_move`
 2. Export it in `agents/__init__.py`
-3. Add it to the `AGENTS` dict in `play.py`
+3. Add it to the `AGENTS` dict in `play.py` and `benchmark.py`
 
 ## Design Decisions
 

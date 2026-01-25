@@ -16,6 +16,14 @@ python play.py
 
 Select an opponent and play as Player 1 or 2. Press 1-7 to choose a column.
 
+## Benchmark
+
+```bash
+python benchmark.py
+```
+
+Run agents against each other to compare performance. Select two agents and number of games (default 1000).
+
 ## Usage
 
 ```python
