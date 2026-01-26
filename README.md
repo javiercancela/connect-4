@@ -82,3 +82,7 @@ connect4/               # Game engine
 agents/                 # Move selection algorithms
 └── random_agent.py
 ```
+
+## Architecture Diagrams
+
+Mermaid diagrams for the engine, agents, and CLI scripts live in `doc/ai/README.md`.

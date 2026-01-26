@@ -27,6 +27,17 @@ play.py                  # Interactive console game
 benchmark.py             # Model comparison tool
 ```
 
+## Mermaid Diagrams
+
+See `doc/ai/README.md` for the full set of Mermaid diagrams, including:
+
+- `doc/ai/architecture-overview.md`
+- `doc/ai/class-diagram.md`
+- `doc/ai/gameplay-sequence.md`
+- `doc/ai/game-loop-flow.md`
+- `doc/ai/heuristic-agent-flow.md`
+- `doc/ai/board-win-logic.md`
+
 ## Key Classes
 
 ### Connect4 (game.py)
