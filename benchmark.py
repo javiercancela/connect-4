@@ -1,12 +1,14 @@
 import sys
+import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from connect4 import Connect4, PLAYER_1, PLAYER_2
 from agents import RandomAgent, HeuristicAgent, MinimaxAgent
 
 
 AGENTS = {
-    "1": ("Random", RandomAgent),
-    "2": ("Heuristic", HeuristicAgent),
-    "3": ("Minimax", MinimaxAgent),
+    "1": ("Random", "random"),
+    "2": ("Heuristic", "heuristic"),
+    "3": ("Minimax", "minimax"),
 }
 
 
@@ -33,11 +35,11 @@ def get_agent_choice(prompt: str):
     while True:
         choice = input("Enter choice: ").strip()
         if choice in AGENTS:
-            name, agent_class = AGENTS[choice]
-            if agent_class is MinimaxAgent:
+            name, agent_key = AGENTS[choice]
+            if agent_key == "minimax":
                 depth = get_minimax_depth(prompt.strip(":"))
-                return f"{name}(d={depth})", agent_class(depth=depth)
-            return name, agent_class()
+                return f"{name}(d={depth})", (agent_key, depth)
+            return name, (agent_key, None)
         print("Invalid choice. Try again.")
 
 
@@ -55,9 +57,38 @@ def get_num_games() -> int:
             print("Enter a valid number.")
 
 
-def play_game(agent1, agent2) -> int:
+def get_num_workers() -> int:
+    default_workers = os.cpu_count() or 1
+
+    while True:
+        try:
+            value = input(f"Workers [{default_workers}]: ").strip()
+            if value == "":
+                return default_workers
+            workers = int(value)
+            if workers > 0:
+                return workers
+            print("Must be positive.")
+        except ValueError:
+            print("Enter a valid number.")
+
+
+def _build_agent(agent_config):
+    agent_key, depth = agent_config
+
+    if agent_key == "random":
+        return RandomAgent()
+    if agent_key == "heuristic":
+        return HeuristicAgent()
+    if agent_key == "minimax":
+        return MinimaxAgent(depth=depth or 4)
+
+    raise ValueError(f"Unknown agent key: {agent_key}")
+
+
+def play_game(agent1_config, agent2_config) -> int:
     game = Connect4()
-    agents = {PLAYER_1: agent1, PLAYER_2: agent2}
+    agents = {PLAYER_1: _build_agent(agent1_config), PLAYER_2: _build_agent(agent2_config)}
 
     while not game.is_game_over:
         agent = agents[game.current_player]
@@ -67,15 +98,59 @@ def play_game(agent1, agent2) -> int:
     return game.winner
 
 
-def run_benchmark(agent1, agent2, num_games: int) -> dict:
+def _play_batch(agent1_config, agent2_config, batch_size: int) -> dict:
+    batch_results = {PLAYER_1: 0, PLAYER_2: 0, None: 0}
+
+    for _ in range(batch_size):
+        winner = play_game(agent1_config, agent2_config)
+        batch_results[winner] += 1
+
+    return batch_results
+
+
+def _merge_results(results: dict, batch_results: dict):
+    results[PLAYER_1] += batch_results[PLAYER_1]
+    results[PLAYER_2] += batch_results[PLAYER_2]
+    results[None] += batch_results[None]
+
+
+def run_benchmark(agent1_config, agent2_config, num_games: int, num_workers: int) -> dict:
     results = {PLAYER_1: 0, PLAYER_2: 0, None: 0}
+    progress_step = 100
+    completed = 0
 
-    for i in range(num_games):
-        winner = play_game(agent1, agent2)
-        results[winner] += 1
+    if num_workers == 1:
+        batch_results = _play_batch(agent1_config, agent2_config, num_games)
+        _merge_results(results, batch_results)
+        print(f"  {num_games}/{num_games} games completed")
+        return results
 
-        if (i + 1) % 100 == 0:
-            print(f"  {i + 1}/{num_games} games completed")
+    worker_count = min(num_workers, num_games)
+    task_count = min(worker_count * 4, num_games)
+    batch_sizes = [num_games // task_count] * task_count
+    for i in range(num_games % task_count):
+        batch_sizes[i] += 1
+
+    try:
+        with ProcessPoolExecutor(max_workers=worker_count) as executor:
+            future_to_batch_size = {
+                executor.submit(_play_batch, agent1_config, agent2_config, batch_size): batch_size
+                for batch_size in batch_sizes
+            }
+
+            for future in as_completed(future_to_batch_size):
+                batch_results = future.result()
+                _merge_results(results, batch_results)
+                completed += future_to_batch_size[future]
+
+                if completed % progress_step == 0 or completed == num_games:
+                    print(f"  {completed}/{num_games} games completed")
+    except (PermissionError, OSError):
+        # Some restricted environments disallow multiprocessing semaphores.
+        print("  Process workers unavailable in this environment, falling back to single worker.")
+        batch_results = _play_batch(agent1_config, agent2_config, num_games)
+        _merge_results(results, batch_results)
+        print(f"  {num_games}/{num_games} games completed")
 
     return results
 
@@ -109,10 +184,11 @@ def main():
     name2, agent2 = get_agent_choice("Select Player 2 (O):")
     print()
     num_games = get_num_games()
+    num_workers = get_num_workers()
 
-    print(f"\nRunning {num_games} games: {name1} vs {name2}\n")
+    print(f"\nRunning {num_games} games on {num_workers} workers: {name1} vs {name2}\n")
 
-    results = run_benchmark(agent1, agent2, num_games)
+    results = run_benchmark(agent1, agent2, num_games, num_workers)
     print_results(name1, name2, results, num_games)
 
 
