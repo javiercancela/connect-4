@@ -53,10 +53,10 @@ print(game)
 
 ```python
 from connect4 import Connect4
-from agents import RandomAgent
+from agents import RandomAgent, MinimaxAgent
 
 game = Connect4()
-agent = RandomAgent()
+agent = MinimaxAgent(depth=4)
 
 while not game.is_game_over:
     move = agent.select_move(game)
@@ -80,7 +80,9 @@ connect4/               # Game engine
 └── game.py
 
 agents/                 # Move selection algorithms
-└── random_agent.py
+├── random_agent.py
+├── heuristic_agent.py
+└── minimax_agent.py
 ```
 
 ## Architecture Diagrams

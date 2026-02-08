@@ -1,12 +1,27 @@
 import sys
 from connect4 import Connect4, PLAYER_1, PLAYER_2
-from agents import RandomAgent, HeuristicAgent
+from agents import RandomAgent, HeuristicAgent, MinimaxAgent
 
 
 AGENTS = {
     "1": ("Random", RandomAgent),
     "2": ("Heuristic", HeuristicAgent),
+    "3": ("Minimax", MinimaxAgent),
 }
+
+
+def get_minimax_depth() -> int:
+    while True:
+        try:
+            value = input("Minimax depth [4]: ").strip()
+            if value == "":
+                return 4
+            depth = int(value)
+            if depth > 0:
+                return depth
+            print("Depth must be positive.")
+        except ValueError:
+            print("Enter a valid number.")
 
 
 def clear_screen():
@@ -22,7 +37,11 @@ def get_agent_choice():
     while True:
         choice = input("Enter choice: ").strip()
         if choice in AGENTS:
-            return AGENTS[choice][1]()
+            _, agent_class = AGENTS[choice]
+            if agent_class is MinimaxAgent:
+                depth = get_minimax_depth()
+                return agent_class(depth=depth)
+            return agent_class()
         print("Invalid choice. Try again.")
 
 
