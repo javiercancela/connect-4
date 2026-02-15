@@ -1,6 +1,6 @@
 # Class Diagram
 
-This diagram captures the core classes and their relationships.
+This diagram captures the core classes and relationships in the current codebase.
 
 ```mermaid
 classDiagram
@@ -56,10 +56,22 @@ classDiagram
         -_pick_most_central(moves) int
     }
 
+    class MinimaxAgent {
+        -int depth
+        +select_move(game) int
+        -_minimax(game, depth, alpha, beta, maximizing, root_player) float
+        -_terminal_score(game, depth, root_player) float
+        -_evaluate_position(game, root_player) float
+        -_evaluate_window(window, root_player) float
+        -_ordered_moves(moves) list[int]
+    }
+
     Connect4 --> Board : owns
     Connect4 --> WinChecker : uses
     WinChecker --> Board : reads
     RandomAgent --> Connect4 : queries
     HeuristicAgent --> Connect4 : queries/copies
     HeuristicAgent --> WinChecker : uses
+    MinimaxAgent --> Connect4 : copies/simulates
+    MinimaxAgent --> Board : evaluates windows
 ```

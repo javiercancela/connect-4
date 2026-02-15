@@ -2,109 +2,146 @@
 
 ## Project Overview
 
-Connect-4 game engine for Reinforcement Learning.
+Connect-4 engine and baseline agents for reinforcement learning experiments and agent-vs-agent evaluation.
 
 ## Architecture
 
 ```
 connect4/
 ├── __init__.py      # Exports: Connect4, Board, WinChecker, constants
-├── constants.py     # ROWS=6, COLS=7, WIN_LENGTH=4, PLAYER_1=1, PLAYER_2=-1, EMPTY=0
-├── board.py         # Board class - grid state and piece placement
-├── win_checker.py   # WinChecker class - static win detection
-└── game.py          # Connect4 class - game orchestration
+├── constants.py     # Board/player constants
+├── board.py         # Board class (state, gravity, availability)
+├── win_checker.py   # Static win detection from last move
+└── game.py          # Connect4 game orchestration
 
 agents/
-├── __init__.py      # Exports: RandomAgent
-└── random_agent.py  # Random move selection
+├── __init__.py         # Exports: RandomAgent, HeuristicAgent, MinimaxAgent
+├── random_agent.py     # Random valid move baseline
+├── heuristic_agent.py  # Tactical one-ply heuristic with safety checks
+└── minimax_agent.py    # Alpha-beta minimax with evaluation function
 
 tests/
 ├── test_game.py
 ├── test_win_checker.py
-└── test_random_agent.py
+├── test_random_agent.py
+└── test_minimax_agent.py
 
-play.py                  # Interactive console game
-benchmark.py             # Model comparison tool
+play.py             # Interactive human vs agent CLI
+benchmark.py        # Parallelized agent-vs-agent benchmark CLI
 ```
 
 ## Mermaid Diagrams
 
-See `doc/ai/README.md` for the full set of Mermaid diagrams, including:
+See `doc/ai/README.md` for complete diagrams:
 
 - `doc/ai/architecture-overview.md`
 - `doc/ai/class-diagram.md`
 - `doc/ai/gameplay-sequence.md`
 - `doc/ai/game-loop-flow.md`
 - `doc/ai/heuristic-agent-flow.md`
+- `doc/ai/minimax-agent-flow.md`
 - `doc/ai/board-win-logic.md`
 
-## Key Classes
+## Key Engine Classes
 
-### Connect4 (game.py)
-Main game interface. Manages turns, game state, and delegates to Board/WinChecker.
+### Connect4 (`connect4/game.py`)
+
+Main game API. Controls turns, validates moves, detects win/draw, and exposes board state helpers.
 
 ```python
 game = Connect4()
-game.play(column)        # Returns (success, winner)
-game.get_valid_moves()   # List[int]
+game.play(column)        # (True, winner_or_none) or raises ValueError
+game.get_valid_moves()   # list[int]
+game.is_valid_move(col)  # bool
 game.current_player      # 1 or -1
 game.is_game_over        # bool
 game.winner              # 1, -1, or None
-game.get_board()         # np.ndarray (6x7)
-game.get_state()         # Board from current player's perspective
-game.copy()              # Deep copy for simulations
-game.reset()             # Reset to initial state
+game.is_draw             # bool
+game.move_count          # int
+game.get_board()         # np.ndarray shape (6, 7), copy
+game.get_state()         # board from current-player perspective
+game.get_state_flat()    # flattened board (42,)
+game.copy()              # deep copy for simulation/search
+game.reset()             # reset and return empty board copy
 ```
 
-### Board (board.py)
-Grid state management. Row 0 is bottom (where pieces land).
+### Board (`connect4/board.py`)
+
+Stores grid as `np.int8` with row `0` at the bottom (gravity model).
 
 ```python
 board = Board()
-board.drop_piece(col, player)    # Returns row where piece landed
+board.drop_piece(col, player)    # returns landing row
 board.is_column_available(col)   # bool
-board.get_available_columns()    # List[int]
-board.get_cell(row, col)         # int (1, -1, or 0)
-board.get_grid()                 # np.ndarray copy
-board.copy()                     # Deep copy
+board.get_available_columns()    # list[int]
+board.is_full()                  # bool
+board.get_cell(row, col)         # int: 1, -1, 0
+board.get_grid()                 # defensive copy
+board.copy()                     # deep copy
 ```
 
-### WinChecker (win_checker.py)
-Static win detection. Checks horizontal, vertical, and both diagonals.
+### WinChecker (`connect4/win_checker.py`)
+
+Checks four-in-a-row from last move by scanning bidirectionally in four directions.
 
 ```python
-WinChecker.check_win(board, row, col)  # bool - checks from last move position
-```
-
-### RandomAgent (agents/random_agent.py)
-Baseline agent that selects a random valid move.
-
-```python
-from agents import RandomAgent
-
-agent = RandomAgent()
-move = agent.select_move(game)  # Returns random valid column
+WinChecker.check_win(board, row, col)  # bool
 ```
 
 ## Agent Interface
 
 All agents implement:
+
 ```python
 def select_move(self, game: Connect4) -> int
 ```
 
-To add a new agent:
-1. Create `agents/your_agent.py` with a class implementing `select_move`
-2. Export it in `agents/__init__.py`
-3. Add it to the `AGENTS` dict in `play.py` and `benchmark.py`
+`select_move` assumes at least one valid move is available.
+
+## Built-in Agents
+
+### RandomAgent (`agents/random_agent.py`)
+
+Returns a random valid move.
+
+### HeuristicAgent (`agents/heuristic_agent.py`)
+
+Priority order:
+1. Play immediate winning move
+2. Block single immediate opponent winning move
+3. Avoid moves that allow immediate opponent win
+4. Prefer central columns among remaining moves
+
+### MinimaxAgent (`agents/minimax_agent.py`)
+
+Depth-limited minimax with alpha-beta pruning and center-first move ordering.  
+Uses:
+- terminal scoring (`+/-1_000_000 +/- depth`)
+- non-terminal heuristic from center control and 4-cell window scoring
+
+## CLI Scripts
+
+### `play.py`
+
+Human vs selected agent (`Random`, `Heuristic`, `Minimax`).  
+If minimax is selected, prompts for search depth (default `4`).
+
+### `benchmark.py`
+
+Runs many games between two selected agents. Supports:
+- minimax depth selection per side
+- configurable game count (default `1000`)
+- configurable worker count (default CPU count)
+- process-pool execution with fallback to single worker in restricted environments
 
 ## Design Decisions
 
-- Players are 1 and -1 (not 1 and 2) for easier neural network output
-- Board uses numpy int8 for memory efficiency
-- Row 0 is bottom of board (gravity simulation)
-- `get_state()` returns board multiplied by current player (perspective transform)
-- All state methods return copies to prevent external mutation
+- Players are `1` and `-1` (not `1` and `2`) for model-friendly symmetric encoding
+- Board uses `numpy.int8` for compact state representation
+- Row index `0` is the bottom row (piece drop direction)
+- `get_state()` applies perspective transform by multiplying board by `current_player`
+- Public board/state getters return copies to avoid external mutation
+- Agent simulations rely on `Connect4.copy()` and may access internals for speed
 
 ## Testing
 
@@ -112,16 +149,9 @@ To add a new agent:
 pytest tests/ -v
 ```
 
-## Code Style
-
-- Small, focused classes with single responsibilities
-- Self-documenting method names, minimal comments
-- Type hints on all public methods
-- No docstrings unless logic is non-obvious
-
-## Future Extensions
-
-Expected additions:
-- More agents (Monte Carlo, DQN, etc.)
-- Training scripts
-- Model evaluation utilities
+Current suite covers:
+- game lifecycle, win modes, draw property, move validation, copy/reset behavior
+- board operations and availability
+- win checking in all directions
+- random agent validity
+- minimax center preference, tactical win/block behavior

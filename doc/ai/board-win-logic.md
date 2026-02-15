@@ -12,11 +12,12 @@ flowchart TD
 
     subgraph WinLogic["WinChecker.check_win"]
         StartWin["given last move (row,col)"]
-        Directions["DIRECTIONS =\n(0,1) horiz\n(1,0) vert\n(1,1) diag /\n(1,-1) diag \\"]
+        EmptyGuard["if board[row,col] == EMPTY\nreturn False"]
+        Directions["DIRECTIONS =\n(0,1) horiz\n(1,0) vert\n(1,1) diag up-right\n(1,-1) diag up-left"]
         Count["count both directions\nfor matching player"]
         Compare["if count >= WIN_LENGTH\nwin = True"]
     end
 
-    Grid --> DropLogic --> StartWin --> Directions --> Count --> Compare
+    Grid --> DropLogic --> StartWin --> EmptyGuard --> Directions --> Count --> Compare
     Grid --> Availability
 ```
