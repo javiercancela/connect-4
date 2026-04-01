@@ -1,14 +1,16 @@
-import sys
 import os
+import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from connect4 import Connect4, PLAYER_1, PLAYER_2
-from agents import RandomAgent, HeuristicAgent, MinimaxAgent
+from agents import DQNAgent, HeuristicAgent, MinimaxAgent, QLearningAgent, RandomAgent
 
 
 AGENTS = {
     "1": ("Random", "random"),
     "2": ("Heuristic", "heuristic"),
     "3": ("Minimax", "minimax"),
+    "4": ("Q-Learning", "qlearning"),
+    "5": ("DQN", "dqn"),
 }
 
 
@@ -26,6 +28,30 @@ def get_minimax_depth(agent_label: str) -> int:
             print("Enter a valid number.")
 
 
+def get_qtable_path(agent_label: str) -> str:
+    default = "models/qtable.pkl.gz"
+    while True:
+        path = input(f"{agent_label} Q-table path [{default}]: ").strip()
+        if path == "":
+            path = default
+        if os.path.exists(path):
+            return path
+        print(f"File not found: {path}")
+        print("Train a model first with: python -m training.train_qlearning")
+
+
+def get_dqn_checkpoint_path(agent_label: str) -> str:
+    default = "models/dqn_model.pt"
+    while True:
+        path = input(f"{agent_label} DQN checkpoint path [{default}]: ").strip()
+        if path == "":
+            path = default
+        if os.path.exists(path):
+            return path
+        print(f"File not found: {path}")
+        print("Train a model first with: python -m training.train_dqn")
+
+
 def get_agent_choice(prompt: str):
     print(f"{prompt}\n")
     for key, (name, _) in AGENTS.items():
@@ -39,6 +65,12 @@ def get_agent_choice(prompt: str):
             if agent_key == "minimax":
                 depth = get_minimax_depth(prompt.strip(":"))
                 return f"{name}(d={depth})", (agent_key, depth)
+            if agent_key == "qlearning":
+                path = get_qtable_path(prompt.strip(":"))
+                return name, (agent_key, path)
+            if agent_key == "dqn":
+                path = get_dqn_checkpoint_path(prompt.strip(":"))
+                return name, (agent_key, path)
             return name, (agent_key, None)
         print("Invalid choice. Try again.")
 
@@ -74,14 +106,18 @@ def get_num_workers() -> int:
 
 
 def _build_agent(agent_config):
-    agent_key, depth = agent_config
+    agent_key, param = agent_config
 
     if agent_key == "random":
         return RandomAgent()
     if agent_key == "heuristic":
         return HeuristicAgent()
     if agent_key == "minimax":
-        return MinimaxAgent(depth=depth or 4)
+        return MinimaxAgent(depth=param or 4)
+    if agent_key == "qlearning":
+        return QLearningAgent(qtable_path=param or "models/qtable.pkl.gz")
+    if agent_key == "dqn":
+        return DQNAgent(checkpoint_path=param or "models/dqn_model.pt")
 
     raise ValueError(f"Unknown agent key: {agent_key}")
 

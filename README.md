@@ -5,7 +5,7 @@ A pure Python game engine for Connect-4, designed for Reinforcement Learning exp
 ## Installation
 
 ```bash
-pip install numpy
+pip install numpy torch
 ```
 
 ## Play
@@ -23,6 +23,80 @@ python benchmark.py
 ```
 
 Run agents against each other to compare performance. Select two agents and number of games (default 1000).
+
+## Train Q-Learning Agent
+
+```bash
+python -m training.train_qlearning
+```
+
+This runs tabular Q-learning training and saves a Q-table to `models/qtable.pkl.gz` by default.
+
+Common options:
+
+```bash
+python -m training.train_qlearning \
+  --episodes 500000 \
+  --alpha 0.1 \
+  --gamma 0.95 \
+  --epsilon-start 1.0 \
+  --epsilon-end 0.05 \
+  --opponent self \
+  --draw-reward 0.5
+```
+
+- `--opponent`: `self`, `random`, `heuristic`, or `minimax`
+- `--load`: resume from an existing Q-table checkpoint
+- `--eval-interval` and `--eval-games`: periodic greedy-policy evaluation
+- `--save-interval`: periodic checkpoint writes
+
+## Train DQN Agent
+
+```bash
+python -m training.train_dqn
+```
+
+This trains a Deep Q-Network with experience replay and a target network, then
+saves a checkpoint to `models/dqn_model.pt` by default.
+
+Common options:
+
+```bash
+python -m training.train_dqn \
+  --episodes 150000 \
+  --opponent self \
+  --eval-interval 10000 \
+  --save-interval 25000
+```
+
+- `--device`: torch device to use for training
+- `--hidden-sizes`: hidden layer sizes for the MLP Q-network
+- `--batch-size` and `--replay-capacity`: replay buffer and optimizer scale
+- `--load`: resume from an existing DQN checkpoint
+
+The DQN CLI chooses hardware-aware defaults at startup. On CUDA machines it
+uses a larger replay batch and a deeper MLP; on CPU it falls back to a smaller
+profile automatically.
+
+### Q-Learning Algorithm
+
+The trainer uses tabular Q-learning with epsilon-greedy exploration and
+horizontal mirror canonicalization.
+
+- **State key**: `game.get_state()` (current-player perspective) is converted to bytes.
+- **Symmetry sharing**: board and horizontally mirrored board map to one canonical key.
+- **Action mapping**: Q-values are stored in canonical action space and remapped when needed.
+- **Defaults**: unseen `(state, action)` values are treated as `0.0`.
+
+Per-player update flow in `training/qlearning/episode_runner.py`:
+
+1. Select action using epsilon-greedy policy over valid canonical actions.
+2. Store pending `(state, action)` for that player.
+3. On that player's next turn, bootstrap with TD(0):
+   `Q(s,a) <- Q(s,a) + alpha * (gamma * max_a' Q(s',a') - Q(s,a))`
+4. At terminal state, apply reward-only update to pending move:
+   - win `+1.0`, draw `draw_reward`, loss `-1.0`
+   - `Q(s,a) <- Q(s,a) + alpha * (reward - Q(s,a))`
 
 ## Usage
 
@@ -53,7 +127,7 @@ print(game)
 
 ```python
 from connect4 import Connect4
-from agents import RandomAgent, MinimaxAgent
+from agents import DQNAgent, MinimaxAgent, QLearningAgent, RandomAgent
 
 game = Connect4()
 agent = MinimaxAgent(depth=4)
@@ -82,7 +156,38 @@ connect4/               # Game engine
 agents/                 # Move selection algorithms
 ├── random_agent.py
 ├── heuristic_agent.py
-└── minimax_agent.py
+├── minimax_agent.py
+├── dqn_agent.py
+└── qlearning_agent.py
+
+training/               # Agent training modules
+├── train_qlearning.py
+├── train_dqn.py
+├── qlearning/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── episode_runner.py
+│   ├── evaluator.py
+│   ├── opponents.py
+│   ├── persistence.py
+│   ├── policy.py
+│   ├── q_values.py
+│   ├── types.py
+│   └── training_loop.py
+└── dqn/
+    ├── __init__.py
+    ├── checkpoint.py
+    ├── config.py
+    ├── episode_runner.py
+    ├── evaluator.py
+    ├── hardware.py
+    ├── network.py
+    ├── optimization.py
+    ├── opponents.py
+    ├── policy.py
+    ├── replay_buffer.py
+    ├── training_loop.py
+    └── types.py
 ```
 
 ## Architecture Diagrams

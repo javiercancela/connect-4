@@ -1,12 +1,15 @@
+import os
 import sys
 from connect4 import Connect4, PLAYER_1, PLAYER_2
-from agents import RandomAgent, HeuristicAgent, MinimaxAgent
+from agents import DQNAgent, HeuristicAgent, MinimaxAgent, QLearningAgent, RandomAgent
 
 
 AGENTS = {
-    "1": ("Random", RandomAgent),
-    "2": ("Heuristic", HeuristicAgent),
-    "3": ("Minimax", MinimaxAgent),
+    "1": ("Random", "random"),
+    "2": ("Heuristic", "heuristic"),
+    "3": ("Minimax", "minimax"),
+    "4": ("Q-Learning", "qlearning"),
+    "5": ("DQN", "dqn"),
 }
 
 
@@ -24,6 +27,22 @@ def get_minimax_depth() -> int:
             print("Enter a valid number.")
 
 
+def get_qtable_path() -> str:
+    default = "models/qtable.pkl.gz"
+    path = input(f"Q-table path [{default}]: ").strip()
+    if path == "":
+        return default
+    return path
+
+
+def get_dqn_checkpoint_path() -> str:
+    default = "models/dqn_model.pt"
+    path = input(f"DQN checkpoint path [{default}]: ").strip()
+    if path == "":
+        return default
+    return path
+
+
 def clear_screen():
     print("\033[2J\033[H", end="")
 
@@ -37,11 +56,27 @@ def get_agent_choice():
     while True:
         choice = input("Enter choice: ").strip()
         if choice in AGENTS:
-            _, agent_class = AGENTS[choice]
-            if agent_class is MinimaxAgent:
+            _, agent_key = AGENTS[choice]
+            if agent_key == "minimax":
                 depth = get_minimax_depth()
-                return agent_class(depth=depth)
-            return agent_class()
+                return MinimaxAgent(depth=depth)
+            if agent_key == "qlearning":
+                path = get_qtable_path()
+                if not os.path.exists(path):
+                    print(f"File not found: {path}")
+                    print("Train a model first with: python -m training.train_qlearning")
+                    continue
+                return QLearningAgent(qtable_path=path)
+            if agent_key == "dqn":
+                path = get_dqn_checkpoint_path()
+                if not os.path.exists(path):
+                    print(f"File not found: {path}")
+                    print("Train a model first with: python -m training.train_dqn")
+                    continue
+                return DQNAgent(checkpoint_path=path)
+            if agent_key == "random":
+                return RandomAgent()
+            return HeuristicAgent()
         print("Invalid choice. Try again.")
 
 
