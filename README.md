@@ -5,13 +5,25 @@ A pure Python game engine for Connect-4, designed for Reinforcement Learning exp
 ## Installation
 
 ```bash
-pip install numpy torch
+uv sync
 ```
+
+For local development and tests, install the dev group too:
+
+```bash
+uv sync --group dev
+```
+
+The project now ships with explicit console entry points:
+
+- `connect4-play`
+- `connect4-train-qlearning`
+- `connect4-train-dqn`
 
 ## Play
 
 ```bash
-python play.py
+uv run connect4-play
 ```
 
 Select an opponent and play as Player 1 or 2. Press 1-7 to choose a column.
@@ -19,7 +31,7 @@ Select an opponent and play as Player 1 or 2. Press 1-7 to choose a column.
 ## Benchmark
 
 ```bash
-python benchmark.py
+uv run python benchmark.py
 ```
 
 Run agents against each other to compare performance. Select two agents and number of games (default 1000).
@@ -27,7 +39,7 @@ Run agents against each other to compare performance. Select two agents and numb
 ## Train Q-Learning Agent
 
 ```bash
-python -m training.train_qlearning
+uv run connect4-train-qlearning
 ```
 
 This runs tabular Q-learning training and saves a Q-table to `models/qtable.pkl.gz` by default.
@@ -35,7 +47,7 @@ This runs tabular Q-learning training and saves a Q-table to `models/qtable.pkl.
 Common options:
 
 ```bash
-python -m training.train_qlearning \
+uv run connect4-train-qlearning \
   --episodes 500000 \
   --alpha 0.1 \
   --gamma 0.95 \
@@ -53,7 +65,7 @@ python -m training.train_qlearning \
 ## Train DQN Agent
 
 ```bash
-python -m training.train_dqn
+uv run connect4-train-dqn
 ```
 
 This trains a Deep Q-Network with experience replay and a target network, then
@@ -62,7 +74,7 @@ saves a checkpoint to `models/dqn_model.pt` by default.
 Common options:
 
 ```bash
-python -m training.train_dqn \
+uv run connect4-train-dqn \
   --episodes 150000 \
   --opponent self \
   --eval-interval 10000 \
@@ -140,14 +152,20 @@ while not game.is_game_over:
 ## Testing
 
 ```bash
-pip install pytest
-pytest tests/ -v
+uv sync --group dev
+uv run pytest tests/ -v
 ```
 
 ## Project Structure
 
 ```
+pyproject.toml          # uv project metadata, dependencies, and console scripts
+uv.lock                 # Locked dependency graph for reproducible installs
+
 connect4/               # Game engine
+├── cli/
+│   ├── __init__.py
+│   └── play.py
 ├── constants.py
 ├── board.py
 ├── win_checker.py
@@ -188,6 +206,9 @@ training/               # Agent training modules
     ├── replay_buffer.py
     ├── training_loop.py
     └── types.py
+
+play.py                 # Local wrapper for the packaged game CLI
+benchmark.py            # Parallelized agent-vs-agent benchmark CLI
 ```
 
 ## Architecture Diagrams

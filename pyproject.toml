@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "connect4-engine"
+version = "0.1.0"
+description = "Connect-4 engine and reinforcement learning training workflows."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "numpy>=1.26",
+    "torch>=2.2",
+]
+
+[project.scripts]
+connect4-play = "connect4.cli.play:run"
+connect4-train-qlearning = "training.train_qlearning:main"
+connect4-train-dqn = "training.train_dqn:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["agents", "connect4", "training"]
+
+[tool.uv]
+package = true

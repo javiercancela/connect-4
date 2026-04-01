@@ -37,7 +37,7 @@ def get_qtable_path(agent_label: str) -> str:
         if os.path.exists(path):
             return path
         print(f"File not found: {path}")
-        print("Train a model first with: python -m training.train_qlearning")
+        print("Train a model first with: uv run connect4-train-qlearning")
 
 
 def get_dqn_checkpoint_path(agent_label: str) -> str:
@@ -49,7 +49,7 @@ def get_dqn_checkpoint_path(agent_label: str) -> str:
         if os.path.exists(path):
             return path
         print(f"File not found: {path}")
-        print("Train a model first with: python -m training.train_dqn")
+        print("Train a model first with: uv run connect4-train-dqn")
 
 
 def get_agent_choice(prompt: str):

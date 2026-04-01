@@ -7,8 +7,14 @@ Connect-4 engine and baseline agents for reinforcement learning experiments and 
 ## Architecture
 
 ```
+pyproject.toml      # uv project metadata, dependencies, and console scripts
+uv.lock             # Locked dependency graph for reproducible installs
+
 connect4/
 ├── __init__.py      # Exports: Connect4, Board, WinChecker, constants
+├── cli/
+│   ├── __init__.py  # Packaged CLI modules
+│   └── play.py      # Interactive human-vs-agent game entrypoint
 ├── constants.py     # Board/player constants
 ├── board.py         # Board class (state, gravity, availability)
 ├── win_checker.py   # Static win detection from last move
@@ -62,10 +68,8 @@ tests/
 ├── test_dqn_training.py
 └── test_qlearning_agent.py
 
-play.py             # Interactive human vs agent CLI
+play.py             # Local wrapper for the packaged game CLI
 benchmark.py        # Parallelized agent-vs-agent benchmark CLI
-train_qlearning.py  # Legacy/extended Q-learning training script
-train_dqn.py        # Legacy/extended DQN training script
 ```
 
 ## Mermaid Diagrams
@@ -205,10 +209,10 @@ Training loop (`training/qlearning/training_loop.py`):
 
 ## CLI Scripts
 
-### `play.py`
+### `connect4-play`
 
-Human vs selected agent (`Random`, `Heuristic`, `Minimax`, `Q-learning`, `DQN`).  
-If minimax is selected, prompts for search depth (default `4`).
+Packaged human-vs-agent game CLI backed by `connect4/cli/play.py`.
+Local development can also invoke the thin `play.py` wrapper from the repo root.
 
 ### `benchmark.py`
 
@@ -221,7 +225,7 @@ Runs many games between two selected agents. Supports:
 
 ### `training/train_qlearning.py`
 
-Primary CLI for tabular Q-learning training. Supports:
+Primary tabular Q-learning CLI, exposed as `connect4-train-qlearning`. Supports:
 - training episodes, alpha, gamma, epsilon schedule, and draw reward
 - opponent selection (`self`, `random`, `heuristic`, `minimax`) and minimax depth
 - optional Q-table resume (`--load`)
@@ -230,7 +234,7 @@ Primary CLI for tabular Q-learning training. Supports:
 
 ### `training/train_dqn.py`
 
-Primary CLI for Deep Q-Network training. Supports:
+Primary Deep Q-Network CLI, exposed as `connect4-train-dqn`. Supports:
 - training episodes, learning rate, gamma, epsilon schedule, and draw reward
 - opponent selection (`self`, `random`, `heuristic`, `minimax`) and minimax depth
 - hardware-aware defaults for device, hidden sizes, batch size, and replay capacity
@@ -251,7 +255,7 @@ Primary CLI for Deep Q-Network training. Supports:
 ## Testing
 
 ```bash
-pytest tests/ -v
+uv run pytest tests/ -v
 ```
 
 Current suite covers:
