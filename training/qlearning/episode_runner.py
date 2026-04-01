@@ -17,6 +17,7 @@ def train_episode(
     gamma: float,
     epsilon: float,
     draw_reward: float,
+    trace_decay: float = 0.0,
 ) -> int | None:
     """Run one training episode and return winner (1, -1, or None)."""
     game = Connect4()
@@ -24,6 +25,8 @@ def train_episode(
 
     ql_player = random.choice([PLAYER_1, PLAYER_2]) if not is_self_play else None
     pending: dict[int, tuple[bytes, int]] = {}
+    use_traces = trace_decay > 0
+    traces: dict[int, list[tuple[bytes, int]]] = {}
 
     while not game.is_game_over:
         player = game.current_player
@@ -42,8 +45,12 @@ def train_episode(
                     for action in canonical_valid_moves
                 )
                 old_q = get_q_value(q_table, previous_state_key, previous_action)
-                updated_q = old_q + alpha * (gamma * max_q_next - old_q)
-                set_q_value(q_table, previous_state_key, previous_action, updated_q)
+                td_error = gamma * max_q_next - old_q
+
+                if use_traces:
+                    _apply_traces(q_table, traces[player], alpha, td_error, gamma, trace_decay)
+                else:
+                    set_q_value(q_table, previous_state_key, previous_action, old_q + alpha * td_error)
 
             canonical_action = choose_epsilon_greedy_canonical_action(
                 q_table,
@@ -53,6 +60,12 @@ def train_episode(
             )
             action = map_action(canonical_action, is_mirrored)
             pending[player] = (state_key, canonical_action)
+
+            if use_traces:
+                if player not in traces:
+                    traces[player] = []
+                traces[player].append((state_key, canonical_action))
+
             game.play(action)
             continue
 
@@ -68,7 +81,27 @@ def train_episode(
             reward = -1.0
 
         old_q = get_q_value(q_table, state_key, action)
-        updated_q = old_q + alpha * (reward - old_q)
-        set_q_value(q_table, state_key, action, updated_q)
+        td_error = reward - old_q
+
+        if use_traces and player in traces:
+            _apply_traces(q_table, traces[player], alpha, td_error, gamma, trace_decay)
+        else:
+            set_q_value(q_table, state_key, action, old_q + alpha * td_error)
 
     return game.winner
+
+
+def _apply_traces(
+    q_table: QTable,
+    history: list[tuple[bytes, int]],
+    alpha: float,
+    td_error: float,
+    gamma: float,
+    trace_decay: float,
+) -> None:
+    """Propagate TD error backward through visited state-action pairs."""
+    decay = 1.0
+    for state_key, action in reversed(history):
+        old_q = get_q_value(q_table, state_key, action)
+        set_q_value(q_table, state_key, action, old_q + alpha * td_error * decay)
+        decay *= gamma * trace_decay

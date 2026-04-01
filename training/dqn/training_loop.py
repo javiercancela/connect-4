@@ -86,9 +86,13 @@ def train_dqn(config: DQNTrainingConfig) -> DQNNetwork:
     run_loss_updates = 0
     total_completed = completed_before_run
 
+    total_planned = completed_before_run + config.episodes
+
     try:
         for episode in range(1, config.episodes + 1):
-            epsilon = config.epsilon_for_episode(episode)
+            epsilon = config.epsilon_for_episode(
+                completed_before_run + episode, total_planned
+            )
             winner, learning_player = train_episode(
                 policy_network=policy_network,
                 replay_buffer=replay_buffer,
@@ -131,7 +135,6 @@ def train_dqn(config: DQNTrainingConfig) -> DQNNetwork:
             if episode % config.log_interval == 0:
                 _log_progress(
                     episode=episode,
-                    total_completed=total_completed,
                     start_time=start_time,
                     wins=run_wins,
                     draws=run_draws,
@@ -271,7 +274,6 @@ def _update_interval_results(
 
 def _log_progress(
     episode: int,
-    total_completed: int,
     start_time: float,
     wins: int,
     draws: int,
@@ -282,7 +284,7 @@ def _log_progress(
     is_self_play: bool,
 ) -> None:
     elapsed = time.time() - start_time
-    episodes_per_second = total_completed / elapsed if elapsed > 0 else 0.0
+    episodes_per_second = episode / elapsed if elapsed > 0 else 0.0
     total = wins + draws + losses
 
     if total == 0:

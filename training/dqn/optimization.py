@@ -29,9 +29,11 @@ def optimize_policy_network(
     current_q_values = policy_network(states).gather(1, actions.unsqueeze(1)).squeeze(1)
 
     with torch.no_grad():
-        next_q_values = target_network(next_states)
-        masked_next_q_values = next_q_values.masked_fill(~next_action_masks, float("-inf"))
-        max_next_q_values = masked_next_q_values.max(dim=1).values
+        # Double DQN: select best actions with policy network, evaluate with target network
+        policy_next_q = policy_network(next_states)
+        masked_policy_next_q = policy_next_q.masked_fill(~next_action_masks, float("-inf"))
+        best_next_actions = masked_policy_next_q.argmax(dim=1, keepdim=True)
+        max_next_q_values = target_network(next_states).gather(1, best_next_actions).squeeze(1)
         max_next_q_values = torch.where(
             dones,
             torch.zeros_like(max_next_q_values),

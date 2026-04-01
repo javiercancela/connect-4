@@ -12,6 +12,24 @@ def flatten_state(state: np.ndarray) -> np.ndarray:
     return state.astype(np.float32, copy=False).reshape(-1)
 
 
+def canonicalize_state(state: np.ndarray) -> tuple[np.ndarray, bool]:
+    """Canonicalize a 2D board state using horizontal mirror symmetry.
+
+    Returns (flattened_canonical_state, is_mirrored). The canonical form is the
+    lexicographically smaller of the board and its horizontal mirror.
+    """
+    flat = state.astype(np.float32).flatten()
+    mirror_flat = state[:, ::-1].astype(np.float32).flatten()
+    if flat.tobytes() <= mirror_flat.tobytes():
+        return flat, False
+    return mirror_flat, True
+
+
+def mirror_action(action: int) -> int:
+    """Map action between real and canonical action space. Self-inverse."""
+    return COLS - 1 - action
+
+
 def build_action_mask(valid_moves: list[int]) -> np.ndarray:
     mask = np.zeros(COLS, dtype=np.bool_)
     mask[valid_moves] = True

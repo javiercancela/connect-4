@@ -31,11 +31,12 @@ class DQNTrainingConfig:
     gradient_clip: float = 5.0
     seed: int = 7
 
-    def epsilon_for_episode(self, episode: int) -> float:
-        if self.episodes <= 1:
+    def epsilon_for_episode(self, episode: int, total_episodes: int | None = None) -> float:
+        total = total_episodes if total_episodes is not None else self.episodes
+        if total <= 1:
             return self.epsilon_end
 
-        progress = (episode - 1) / (self.episodes - 1)
+        progress = (episode - 1) / (total - 1)
         return self.epsilon_start + (self.epsilon_end - self.epsilon_start) * progress
 
 

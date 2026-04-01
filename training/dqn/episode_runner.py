@@ -6,7 +6,7 @@ import torch
 
 from connect4 import Connect4, PLAYER_1, PLAYER_2
 
-from .policy import build_action_mask, choose_epsilon_greedy_action, flatten_state
+from .policy import build_action_mask, canonicalize_state, choose_epsilon_greedy_action, mirror_action
 from .replay_buffer import ReplayBuffer
 from .types import PendingTransition
 
@@ -30,8 +30,11 @@ def train_episode(
         is_learning_turn = is_self_play or player == learning_player
 
         if is_learning_turn:
-            state_vector = flatten_state(game.get_state())
+            canonical_state, is_mirrored = canonicalize_state(game.get_state())
             valid_moves = game.get_valid_moves()
+            canonical_moves = (
+                [mirror_action(m) for m in valid_moves] if is_mirrored else valid_moves
+            )
 
             previous_transition = pending.get(player)
             if previous_transition is not None:
@@ -39,20 +42,21 @@ def train_episode(
                     state=previous_transition.state,
                     action=previous_transition.action,
                     reward=0.0,
-                    next_state=state_vector,
-                    next_action_mask=build_action_mask(valid_moves),
+                    next_state=canonical_state,
+                    next_action_mask=build_action_mask(canonical_moves),
                     done=False,
                 )
 
-            action = choose_epsilon_greedy_action(
+            canonical_action = choose_epsilon_greedy_action(
                 policy_network=policy_network,
-                state_vector=state_vector,
-                valid_moves=valid_moves,
+                state_vector=canonical_state,
+                valid_moves=canonical_moves,
                 epsilon=epsilon,
                 device=device,
             )
-            pending[player] = PendingTransition(state=state_vector, action=action)
-            game.play(action)
+            pending[player] = PendingTransition(state=canonical_state, action=canonical_action)
+            real_action = mirror_action(canonical_action) if is_mirrored else canonical_action
+            game.play(real_action)
             continue
 
         action = opponent.select_move(game)

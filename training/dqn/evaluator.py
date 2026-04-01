@@ -4,7 +4,7 @@ import torch
 
 from connect4 import Connect4, PLAYER_1, PLAYER_2
 
-from .policy import choose_greedy_action, flatten_state
+from .policy import canonicalize_state, choose_greedy_action, mirror_action
 
 
 def evaluate_policy(
@@ -21,12 +21,15 @@ def evaluate_policy(
 
         while not game.is_game_over:
             if game.current_player == dqn_player:
-                move = choose_greedy_action(
-                    policy_network,
-                    flatten_state(game.get_state()),
-                    game.get_valid_moves(),
-                    device,
+                canonical_state, is_mirrored = canonicalize_state(game.get_state())
+                valid_moves = game.get_valid_moves()
+                canonical_moves = (
+                    [mirror_action(m) for m in valid_moves] if is_mirrored else valid_moves
                 )
+                canonical_action = choose_greedy_action(
+                    policy_network, canonical_state, canonical_moves, device
+                )
+                move = mirror_action(canonical_action) if is_mirrored else canonical_action
             else:
                 move = opponent.select_move(game)
 

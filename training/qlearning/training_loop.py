@@ -16,10 +16,9 @@ from .types import QTable
 def train_qlearning(config: QLearningTrainingConfig) -> QTable:
     q_table = _initialize_qtable(config.load)
 
-    opponent = build_training_opponent(config.opponent, config.minimax_depth)
-    opponent_label = config.opponent if config.opponent != "self" else "self-play"
+    opponents = _build_training_opponents(config.opponents, config.minimax_depth)
 
-    _print_training_config(config, opponent_label)
+    _print_training_config(config)
 
     start_time = time.time()
     wins = draws = losses = 0
@@ -28,13 +27,17 @@ def train_qlearning(config: QLearningTrainingConfig) -> QTable:
     try:
         for episode in range(1, config.episodes + 1):
             epsilon = config.epsilon_for_episode(episode)
+            alpha = config.alpha_for_episode(episode)
+            opponent_name = config.opponent_for_episode(episode)
+
             winner = train_episode(
                 q_table=q_table,
-                opponent=opponent,
-                alpha=config.alpha,
+                opponent=opponents[opponent_name],
+                alpha=alpha,
                 gamma=config.gamma,
                 epsilon=epsilon,
                 draw_reward=config.draw_reward,
+                trace_decay=config.trace_decay,
             )
 
             if winner == PLAYER_1:
@@ -45,7 +48,7 @@ def train_qlearning(config: QLearningTrainingConfig) -> QTable:
                 losses += 1
 
             if episode % 10_000 == 0:
-                _print_progress(episode, start_time, wins, draws, losses, epsilon, len(q_table))
+                _print_progress(episode, start_time, wins, draws, losses, epsilon, alpha, len(q_table))
 
             if config.eval_interval > 0 and episode % config.eval_interval == 0:
                 _run_evaluations(q_table, config.eval_games)
@@ -69,6 +72,16 @@ def train_qlearning(config: QLearningTrainingConfig) -> QTable:
     return q_table
 
 
+def _build_training_opponents(
+    names: tuple[str, ...], minimax_depth: int
+) -> dict[str, object | None]:
+    opponents: dict[str, object | None] = {}
+    for name in names:
+        if name not in opponents:
+            opponents[name] = build_training_opponent(name, minimax_depth)
+    return opponents
+
+
 def _initialize_qtable(load_path: str | None) -> QTable:
     if load_path and os.path.exists(load_path):
         print(f"Loading Q-table from {load_path}")
@@ -78,13 +91,17 @@ def _initialize_qtable(load_path: str | None) -> QTable:
     return {}
 
 
-def _print_training_config(config: QLearningTrainingConfig, opponent_label: str) -> None:
+def _print_training_config(config: QLearningTrainingConfig) -> None:
+    opponent_label = " -> ".join(
+        "self-play" if o == "self" else o for o in config.opponents
+    )
     print("\nTraining config:")
     print(f"  Episodes:      {config.episodes:,}")
-    print(f"  Opponent:      {opponent_label}")
-    print(f"  Alpha:         {config.alpha}")
+    print(f"  Opponents:     {opponent_label}")
+    print(f"  Alpha:         {config.alpha} -> {config.alpha_end}")
     print(f"  Gamma:         {config.gamma}")
     print(f"  Epsilon:       {config.epsilon_start} -> {config.epsilon_end}")
+    print(f"  Trace decay:   {config.trace_decay}")
     print(f"  Draw reward:   {config.draw_reward}")
     print(f"  Output:        {config.output}")
     print()
@@ -97,6 +114,7 @@ def _print_progress(
     draws: int,
     losses: int,
     epsilon: float,
+    alpha: float,
     num_states: int,
 ) -> None:
     elapsed = time.time() - start_time
@@ -109,6 +127,7 @@ def _print_progress(
         f"{100 * draws / total:.0f}/"
         f"{100 * losses / total:.0f}% | "
         f"Eps: {epsilon:.3f} | "
+        f"Alpha: {alpha:.4f} | "
         f"{episodes_per_second:.0f} ep/s"
     )
 
